@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Guess the Number</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --panel: #121a2b;
+      --accent: #6ee7ff;
+      --accent-2: #7c3aed;
+      --text: #e6edf6;
+      --muted: #9fb0c9;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 800px at 80% -10%, #1b2550 0%, transparent 60%),
+                  radial-gradient(1000px 700px at -10% 120%, #0a4d63 0%, transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .card{
+      width: min(980px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(6px);
+      border-radius: 20px; box-shadow: var(--shadow); padding: 22px;
+    }
+    h1{margin:0 0 4px; font-size: clamp(22px, 4vw, 32px)}
+    .sub{color:var(--muted); margin:0 0 18px; font-size:14px}
+    .row{display:grid; grid-template-columns: 1.2fr .8fr; gap:18px}
+    @media (max-width: 820px){ .row{grid-template-columns:1fr} }
+    .panel{background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px}
+    .controls{display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:end; margin-top:10px}
+    label{font-size:12px; color:var(--muted); margin-bottom:6px; display:block}
+    input[type="number"], select{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#0f1626; color:var(--text); outline:none }
+    input[type="number"]:focus, select:focus{ border-color: var(--accent) }
+    button{ cursor:pointer; border:none; padding:12px 16px; border-radius:12px; color:#06131a; font-weight:700; background: linear-gradient(90deg, var(--accent), #c084fc); box-shadow: 0 6px 18px rgba(110,231,255,.25); transition: transform .06s ease }
+    button:hover{ transform: translateY(-1px) }
+    .mutebtn{ background:#1e293b; color:var(--text); font-weight:600; box-shadow:none }
+    .mutebtn:hover{ background:#263245 }
+    .statgrid{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px }
+    @media (max-width: 560px){ .statgrid{grid-template-columns:1fr} }
+    .stat{ background:#0e1626; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px }
+    .stat .k{ color:var(--muted); font-size:12px }
+    .stat .v{ font-size:20px; font-weight:800 }
+    .hint{ padding:12px 14px; background:#0e1626; border:1px dashed rgba(255,255,255,.14); border-radius:12px; margin-top:12px; white-space:pre-wrap }
+    .badge{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#081018; background:linear-gradient(90deg, var(--accent-2), var(--accent)); border:1px solid rgba(255,255,255,.14)}
+    .range{ color:var(--muted); font-size:13px; margin-top:4px }
+    .log{ max-height: 240px; overflow:auto; padding-right:4px }
+    .hr{ height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent); margin:12px 0 }
+    .success{ color: var(--success) }
+    .warning{ color: var(--warning) }
+    .danger{ color: var(--danger) }
+    .footer{ color:var(--muted); font-size:12px; margin-top:8px }
+    .radio{ display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted) }
+    .radio input{ transform: translateY(1px) }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎮 Guess the Number With Greate Thinking</h1>
+    <p class="sub">Smart hints, adaptive difficulty, and clean UI. Good luck!</p>
+
+    <div class="row">
+      <!-- Left: Game play -->
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap">
+          <div>
+            <div class="badge" id="levelBadge">Level 1</div>
+            <div class="range" id="rangeText">Range: 1–10</div>
+          </div>
+          <div class="radio" title="Choose hint style">
+            <label><input type="radio" name="hintmode" value="smart" checked> Smart</label>
+            <label><input type="radio" name="hintmode" value="basic"> Basic</label>
+          </div>
+          <div style="display:flex; gap:8px">
+            <select id="manualLevel" title="Set level (overrides auto for this round)">
+              <option value="auto" selected>Auto</option>
+              <option value="1">Level 1</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+              <option value="4">Level 4</option>
+              <option value="5">Level 5</option>
+            </select>
+            <button id="newGameBtn" aria-label="Start new round">New Round</button>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div>
+            <label for="guessInput">Your Guess</label>
+            <input id="guessInput" type="number" inputmode="numeric" placeholder="Type a number…" />
+          </div>
+          <button id="submitGuessBtn">Submit</button>
+        </div>
+
+        <div class="hint" id="hintBox">I will guide you with hints. Make your first guess!</div>
+
+        <div class="hr"></div>
+        <div class="log" id="log"></div>
+      </div>
+
+      <!-- Right: Stats -->
+      <div class="panel">
+        <div class="statgrid">
+          <div class="stat"><div class="k">Wins</div><div class="v" id="wins">0</div></div>
+          <div class="stat"><div class="k">Games</div><div class="v" id="games">0</div></div>
+          <div class="stat"><div class="k">Win Rate</div><div class="v" id="winrate">0%</div></div>
+          <div class="stat"><div class="k">Avg Attempts</div><div class="v" id="avgAttempts">0.0</div></div>
+          <div class="stat"><div class="k">This Round Attempts</div><div class="v" id="roundAttempts">0</div></div>
+          <div class="stat"><div class="k">Current Range Size</div><div class="v" id="rangeSize">100</div></div>
+        </div>
+        <div class="hr"></div>
+        <button class="mutebtn" id="giveUpBtn" style="width:100%">Reveal & Next Round</button>
+        <p class="footer">Difficulty auto-adjusts after each win/loss. Levels increase the range by ×10.</p>
+        
+
+
+
+
+
+
+
+
+
+
+      </div>
+
+
+      <footer class="footer"> © 2025 Developed By- Chaudhary Shad Khan</footer>
+    </div>
+  </div>
+
+  <script>
+    class GuessTheNumberGame {
+      constructor() {
+        this.min_range = 1;
+        this.max_range = 10;
+        this.target_number = 0;
+        this.attempts = 0;
+        this.total_games = 0;
+        this.total_attempts = 0;
+        this.wins = 0;
+        this.difficulty_level = 1; // 1-5
+      }
+
+      generate_number(levelOverride = null) {
+        const level = levelOverride ?? this.difficulty_level;
+        const range_multiplier = Math.pow(10, level - 1);
+        this.min_range = 1;
+        this.max_range = 10 * range_multiplier;
+        this.target_number = Math.floor(Math.random() * (this.max_range - this.min_range + 1)) + this.min_range;
+      }
+
+      get_hint(guess) {
+        const difference = Math.abs(guess - this.target_number);
+        const denom = (this.max_range - this.min_range) || 1;
+        const percentage_diff = (difference / denom) * 100;
+        let hint;
+        if (difference === 0) hint = "🎯 Bullseye! You got it exactly right!";
+        else if (percentage_diff <= 1) hint = "🔥 EXTREMELY HOT! You're almost touching it!";
+        else if (percentage_diff <= 5) hint = "🔥 Very hot! You're getting really close.";
+        else if (percentage_diff <= 10) hint = "💨 Warm! Getting warmer...";
+        else if (percentage_diff <= 20) hint = "🌬️ Lukewarm. You're in the right area.";
+        else if (percentage_diff <= 40) hint = "❄️ Cool. Not quite there yet.";
+        else hint = "🧊 Freezing cold! Way off track.";
+        hint += guess < this.target_number ? " (Try going higher)" : " (Try going lower)";
+        return hint;
+      }
+
+      get_intelligent_hint(guess) {
+        const difference = Math.abs(guess - this.target_number);
+        const range_size = Math.max(1, this.max_range - this.min_range);
+        if (guess === this.target_number) return "🎯 Perfect guess! You found it!";
+        let temp_hint;
+        if (difference <= range_size * 0.01) temp_hint = "🔥 BOILING HOT! Almost there!";
+        else if (difference <= range_size * 0.05) temp_hint = "🔥 Very hot!";
+        else if (difference <= range_size * 0.1) temp_hint = "💨 Warm";
+        else if (difference <= range_size * 0.2) temp_hint = "🌬️ Lukewarm";
+        else if (difference <= range_size * 0.4) temp_hint = "❄️ Cool";
+        else temp_hint = "🧊 Freezing cold";
+        let math_hint = (this.target_number % 2 === 0) ? "The number is even. " : "The number is odd. ";
+        if (this.target_number % 5 === 0) math_hint += "It's divisible by 5. ";
+        const direction = (guess < this.target_number) ? "higher" : "lower";
+        return `${temp_hint} | ${math_hint}| Try going ${direction}.`;
+      }
+
+      adjust_difficulty() {
+        if (this.total_games > 0) {
+          const win_rate = this.wins / this.total_games;
+          const avg_attempts = this.total_attempts / this.total_games;
+          if (win_rate > 0.8 && avg_attempts < 5) this.difficulty_level = Math.min(5, this.difficulty_level + 1);
+          else if (win_rate < 0.4 || avg_attempts > 15) this.difficulty_level = Math.max(1, this.difficulty_level - 1);
+        }
+      }
+    }
+
+    // ---- UI Controller ----
+    const game = new GuessTheNumberGame();
+
+    const els = {
+      levelBadge: document.getElementById('levelBadge'),
+      rangeText: document.getElementById('rangeText'),
+      guessInput: document.getElementById('guessInput'),
+      submitGuessBtn: document.getElementById('submitGuessBtn'),
+      hintBox: document.getElementById('hintBox'),
+      log: document.getElementById('log'),
+      wins: document.getElementById('wins'),
+      games: document.getElementById('games'),
+      winrate: document.getElementById('winrate'),
+      avgAttempts: document.getElementById('avgAttempts'),
+      roundAttempts: document.getElementById('roundAttempts'),
+      rangeSize: document.getElementById('rangeSize'),
+      newGameBtn: document.getElementById('newGameBtn'),
+      giveUpBtn: document.getElementById('giveUpBtn'),
+      manualLevel: document.getElementById('manualLevel'),
+    };
+
+    function updateTopBar(levelUsed){
+      els.levelBadge.textContent = `Level ${levelUsed}`;
+      els.rangeText.textContent = `Range: ${game.min_range}–${game.max_range}`;
+      els.rangeSize.textContent = (game.max_range - game.min_range + 1).toLocaleString();
+    }
+
+    function updateStats(){
+      els.wins.textContent = game.wins;
+      els.games.textContent = game.total_games;
+      const wr = game.total_games ? (game.wins / game.total_games) * 100 : 0;
+      els.winrate.textContent = `${wr.toFixed(1)}%`;
+      const avg = game.total_games ? (game.total_attempts / game.total_games) : 0;
+      els.avgAttempts.textContent = avg.toFixed(1);
+      els.roundAttempts.textContent = game.attempts;
+    }
+
+    function appendLog(text){
+      const p = document.createElement('div');
+      p.textContent = text;
+      els.log.prepend(p);
+    }
+
+    function currentHintMode(){
+      const sel = document.querySelector('input[name="hintmode"]:checked');
+      return sel ? sel.value : 'smart';
+    }
+
+    function startRound(){
+      // If manual level selected, use it for this round only
+      const manual = els.manualLevel.value;
+      let levelUsed = game.difficulty_level;
+      if (manual !== 'auto') levelUsed = parseInt(manual, 10);
+      game.generate_number(levelUsed);
+      game.attempts = 0;
+      updateTopBar(levelUsed);
+      updateStats();
+      els.hintBox.textContent = 'New round started! Make your guess.';
+      els.guessInput.value = '';
+      els.guessInput.focus();
+    }
+
+    function endRound(win){
+      game.total_games += 1;
+      game.total_attempts += game.attempts;
+      if (win) game.wins += 1;
+      game.adjust_difficulty();
+      updateStats();
+      const after = win ? `✅ You won in ${game.attempts} attempts.` : `ℹ️ Answer was ${game.target_number}.`;
+      appendLog(`${after} Next round auto-adjusted to Level ${game.difficulty_level}.`);
+      startRound();
+    }
+
+    function submitGuess(){
+      const val = parseInt(els.guessInput.value, 10);
+      if (Number.isNaN(val)){
+        els.hintBox.textContent = 'Please enter a valid number!';
+        return;
+      }
+      if (val < game.min_range || val > game.max_range){
+        els.hintBox.textContent = `Please enter a number between ${game.min_range} and ${game.max_range}`;
+        return;
+      }
+      game.attempts += 1;
+      updateStats();
+
+      if (val === game.target_number){
+        els.hintBox.innerHTML = `🎉 Congratulations! You guessed it in <b>${game.attempts}</b> attempts!`;
+        appendLog(`🎯 WIN: ${val} (Round attempts: ${game.attempts})`);
+        setTimeout(() => endRound(true), 600);
+      } else {
+        const hint = currentHintMode() === 'smart' ? game.get_intelligent_hint(val) : game.get_hint(val);
+        els.hintBox.textContent = hint;
+        appendLog(`Guess ${game.attempts}: ${val} → ${hint}`);
+      }
+    }
+
+    // Event bindings
+    els.submitGuessBtn.addEventListener('click', submitGuess);
+    els.guessInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submitGuess(); });
+    els.newGameBtn.addEventListener('click', startRound);
+    els.giveUpBtn.addEventListener('click', ()=>{
+      appendLog(`🧠 Reveal: ${game.target_number}`);
+      els.hintBox.textContent = `Revealed: ${game.target_number}. Starting next round…`;
+      setTimeout(()=>endRound(false), 500);
+    });
+
+    // Init
+    startRound();
+  </script>
+
+
+
+
+
+</body>
+</html>
